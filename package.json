@@ -1,0 +1,12 @@
+{
+  "name": "zk-relay",
+  "version": "1.0.0",
+  "description": "HTTP to HTTPS relay for ZKTeco MB2000",
+  "main": "relay.js",
+  "scripts": {
+    "start": "node relay.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

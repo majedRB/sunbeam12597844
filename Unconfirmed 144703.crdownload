@@ -1,0 +1,52 @@
+// ZKTeco MB2000 HTTP → HTTPS Relay Server (Render.com)
+// Forwards device HTTP requests to the Lovable HTTPS endpoint
+
+const http = require('http');
+const https = require('https');
+
+const TARGET_HOST = 'sunbeamsteel.online';
+const PORT = process.env.PORT || 8080;
+
+const server = http.createServer((req, res) => {
+  const start = Date.now();
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+
+  const options = {
+    hostname: TARGET_HOST,
+    port: 443,
+    path: req.url,
+    method: req.method,
+    headers: {
+      ...req.headers,
+      host: TARGET_HOST,
+    },
+  };
+
+  const proxy = https.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res, { end: true });
+    proxyRes.on('end', () => {
+      console.log(`  → ${proxyRes.statusCode} (${Date.now() - start}ms)`);
+    });
+  });
+
+  proxy.on('error', (err) => {
+    console.error('Proxy error:', err.message);
+    res.writeHead(502);
+    res.end('Bad Gateway');
+  });
+
+  req.pipe(proxy, { end: true });
+});
+
+// Health check endpoint for Render
+server.on('request', (req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200);
+    res.end('OK');
+  }
+});
+
+server.listen(PORT, () => {
+  console.log(`ZK Relay listening on port ${PORT} → https://${TARGET_HOST}`);
+});
